@@ -2,6 +2,14 @@ package;
 
 import flixel.FlxSprite;
 import flixel.FlxG;
+import flash.display.BitmapData;
+
+#if sys
+import sys.io.File;
+import haxe.io.Path;
+import openfl.utils.ByteArray;
+import sys.FileSystem;
+#end
 
 using StringTools;
 
@@ -25,7 +33,7 @@ class AttachedSprite extends FlxSprite
 			animation.addByPrefix('idle', anim, 24, loop);
 			animation.play('idle');
 		} else {
-			loadGraphic(Paths.image(file));
+			loadGraphic(BitmapData.fromFile(Paths.image(file)));
 		}
 		antialiasing = FlxG.save.data.antialiasing;
 		scrollFactor.set();

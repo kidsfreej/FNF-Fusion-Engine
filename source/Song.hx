@@ -36,7 +36,7 @@ typedef SwagSong =
 	var vocalsSuffix:String;
 	var displayName:String;
 
-	var audioFromUrl:Bool;
+	var audioFromUrl:Null<Bool>;
 	var instUrl:String;
 	var vocalsUrl:String;
 
@@ -69,7 +69,7 @@ class Song
 	public var vocalsSuffix:String = '';
 	public var displayName:String = '';
 
-	public var audioFromUrl:Bool = false;
+	public var audioFromUrl:Null<Bool> = false;
 	public var instUrl:String = '';
 	public var vocalsUrl:String = '';
 
@@ -89,7 +89,7 @@ class Song
 		this.bpm = bpm;
 	}
 
-	public static function loadFromJson(jsonInput:String, ?folder:String):SwagSong
+	public static function loadFromJson(jsonInput:String, ?folder:String, freeplay:Bool = false):SwagSong
 	{
 		/*trace(jsonInput);
 
@@ -110,7 +110,7 @@ class Song
 			// LOL GOING THROUGH THE BULLSHIT TO CLEAN IDK WHATS STRANGE
 		}
 
-		return parseJSONshit(rawJson);*/
+		return parseJSONshit(rawJson);*//*
 		var rawJson:String = "";
 			if (jsonInput != folder)
 			{
@@ -129,7 +129,14 @@ class Song
 			{
 				rawJson = rawJson.substr(0, rawJson.length - 1);
 				// LOL GOING THROUGH THE BULLSHIT TO CLEAN IDK WHATS STRANGE
-			}
+			}*/
+
+		#if sys
+		var rawJson = File.getContent(Paths.json(folder.toLowerCase() + '/' + jsonInput.toLowerCase(), freeplay)).trim();
+		#else
+		var rawJson = Assets.getText(Paths.json(folder.toLowerCase() + '/' + jsonInput.toLowerCase(), false)).trim();
+		#end
+
 			var parsedJson = parseJSONshit(rawJson);
 			if (parsedJson.stage == null) {
 				if (parsedJson.song.toLowerCase() == 'spookeez'|| parsedJson.song.toLowerCase() == 'monster' || parsedJson.song.toLowerCase() == 'south') {
@@ -229,6 +236,20 @@ class Song
 					parsedJson.uiType = 'normal';
 				}
 			}
+
+			if (parsedJson.audioFromUrl == null) {
+					parsedJson.audioFromUrl = false;
+			}
+
+			if (parsedJson.instUrl == null) {
+					parsedJson.instUrl = '';
+			}
+
+			if (parsedJson.vocalsUrl == null) {
+					parsedJson.vocalsUrl = '';
+
+			}
+
 			// FIX THE CASTING ON WINDOWS/NATIVE
 			// Windows???
 			// trace(songData);
@@ -250,7 +271,7 @@ class Song
 			{
 				// means this isn't normal difficulty
 				// lets finally overwrite notes
-				var realJson = parseJSONshit(File.getContent("assets/data/" + folder.toLowerCase() + "/" + jsonInput.toLowerCase() + '.json').trim());
+				var realJson = parseJSONshit(File.getContent("assets/data/" + (freeplay ? "freeplayCharts/" : "charts/") + folder.toLowerCase() + "/" + jsonInput.toLowerCase() + '.json').trim());
 				parsedJson.notes = realJson.notes;
 				parsedJson.bpm = realJson.bpm;
 				parsedJson.needsVoices = realJson.needsVoices;

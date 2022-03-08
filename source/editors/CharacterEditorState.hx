@@ -384,6 +384,7 @@ class CharacterEditorState extends MusicBeatState
 	var positionCameraYStepper:FlxUINumericStepper;
 
 	var flipXCheckBox:FlxUICheckBox;
+	var psychFileCheckBox:FlxUICheckBox;
 	var noAntialiasingCheckBox:FlxUICheckBox;
 
 	var healthColorStepperR:FlxUINumericStepper;
@@ -421,11 +422,14 @@ class CharacterEditorState extends MusicBeatState
 			ghostChar.flipX = char.flipX;
 		};
 
+		psychFileCheckBox = new FlxUICheckBox(flipXCheckBox.x, singDurationStepper.y + 80, null, null, "Is Psych Json", 50);
+		psychFileCheckBox.checked = char.isPsychFile;
+
 		noAntialiasingCheckBox = new FlxUICheckBox(flipXCheckBox.x, flipXCheckBox.y + 40, null, null, "No Antialiasing", 80);
 		noAntialiasingCheckBox.checked = char.noAntialiasing;
 		noAntialiasingCheckBox.callback = function() {
 			char.antialiasing = false;
-			if(!noAntialiasingCheckBox.checked && ClientPrefs.globalAntialiasing) {
+			if(!noAntialiasingCheckBox.checked && FlxG.save.data.Antialiasing) {
 				char.antialiasing = true;
 			}
 			char.noAntialiasing = noAntialiasingCheckBox.checked;
@@ -847,6 +851,7 @@ class CharacterEditorState extends MusicBeatState
 			singDurationStepper.value = char.singDuration;
 			scaleStepper.value = char.jsonScale;
 			flipXCheckBox.checked = char.originalFlipX;
+			psychFileCheckBox.checked = char.isPsychFile;
 			noAntialiasingCheckBox.checked = char.noAntialiasing;
 			resetHealthBarColor();
 			leHealthIcon.changeIcon(healthIconInputText.text);
@@ -1130,18 +1135,17 @@ class CharacterEditorState extends MusicBeatState
 	}
 
 	function saveCharacter() {
+	switch (char.isPsychFile) {
+	case true:
 		var json = {
 			"animations": char.animationsArray,
-			"image": char.imageFile,
 			"scale": char.jsonScale,
-			"sing_duration": char.singDuration,
 			"healthicon": char.healthIcon,
 		
 			"position":	char.positionArray,
 			"camera_position": char.cameraPosition,
 		
 			"flip_x": char.originalFlipX,
-			"no_antialiasing": char.noAntialiasing,
 			"healthbar_colors": char.healthColorArray
 		};
 
@@ -1155,6 +1159,30 @@ class CharacterEditorState extends MusicBeatState
 			_file.addEventListener(IOErrorEvent.IO_ERROR, onSaveError);
 			_file.save(data, daAnim + ".json");
 		}
+	case false:
+		var json = {
+			"animation": char.animationsArray,
+			"image": char.imageFile,
+			"scale": char.jsonScale,
+		
+			"enemyOffset":	char.positionArray,
+			"followCam": char.cameraPosition,
+		
+			"flipx": char.originalFlipX,
+			"healthbar_colors": char.healthColorArray
+		};
+
+		var data:String = Json.stringify(json, "\t");
+
+		if (data.length > 0)
+		{
+			_file = new FileReference();
+			_file.addEventListener(Event.COMPLETE, onSaveComplete);
+			_file.addEventListener(Event.CANCEL, onSaveCancel);
+			_file.addEventListener(IOErrorEvent.IO_ERROR, onSaveError);
+			_file.save(data, daAnim + ".json");
+		}
+	}
 	}
 
 	function ClipboardAdd(prefix:String = ''):String {

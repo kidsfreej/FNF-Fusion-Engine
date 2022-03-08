@@ -13,6 +13,18 @@ import flixel.text.FlxText;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import lime.utils.Assets;
+import flash.display.BitmapData;
+
+#if sys
+import sys.io.File;
+import haxe.io.Path;
+import openfl.utils.ByteArray;
+import sys.FileSystem;
+#end
+
+import haxe.Json;
+import tjson.TJSON;
+import haxe.format.JsonParser;
 
 using StringTools;
 
@@ -23,7 +35,7 @@ class CreditsState extends MusicBeatState
 	private var grpOptions:FlxTypedGroup<Dynamic>;
 	private var iconArray:Array<AttachedSprite> = [];
 
-	private static var creditsStuff:Array<Dynamic> = [ //Name - Icon name - Description - Link - BG Color
+	private static var creditsStuffFallBack:Array<Dynamic> = [ //Name - Icon name - Description - Link - BG Color
 		//https://discord.gg/7mHaNysx7c
 		['Developers of Better Fusion'],
 		['Discussions', 		'discussions', 		'Main Programmer of Better Fusion Engine', 			'https://gamebanana.com/members/1900848', 			 0xFF57E88A],
@@ -48,6 +60,10 @@ class CreditsState extends MusicBeatState
 		['kawaisprite',			'kawaisprite',		"Composer of Friday Night Funkin'",					'https://twitter.com/kawaisprite',					 0xFF6475F3]
 	];
 
+	private static var creditsStuff:Array<Dynamic> = [ //Name - Icon name - Description - Link - BG Color
+		
+	];
+
 	var bg:FlxSprite;
 	var descText:FlxText;
 	var intendedColor:Int;
@@ -66,6 +82,10 @@ class CreditsState extends MusicBeatState
 		grpOptions = new FlxTypedGroup<ShaggyAlphabet>();
 		add(grpOptions);
 
+		var parsed = CoolUtil.parseJson(File.getContent('assets/images/betterfusion_customize/custom_credits/credits.jsonc'));
+		trace(parsed[0].credits);
+		creditsStuff = parsed[0].credits;
+
 		for (i in 0...creditsStuff.length)
 		{
 			var isSelectable:Bool = !unselectableCheck(i);
@@ -81,6 +101,7 @@ class CreditsState extends MusicBeatState
 			grpOptions.add(optionText);
 
 			if(isSelectable) {
+				trace(creditsStuff[i][1]);
 				var icon:AttachedSprite = new AttachedSprite('credits/' + creditsStuff[i][1]);
 				icon.xAdd = optionText.width + 10;
 				icon.sprTracker = optionText;
@@ -155,7 +176,7 @@ class CreditsState extends MusicBeatState
 				curSelected = 0;
 		} while(unselectableCheck(curSelected));
 
-		var newColor:Int = creditsStuff[curSelected][4];
+		var newColor:Int = Std.int(creditsStuff[curSelected][4]);
 		if(newColor != intendedColor) {
 			if(colorTween != null) {
 				colorTween.cancel();

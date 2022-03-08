@@ -87,11 +87,13 @@ class SongMetadatas {
 	public var songName:String = "";
 	public var week:Int = 0;
 	public var songCharacter:String = "";
+	public var isFreeplayChart:Bool = false;
 
-	public function new(song:String, week:Int, songCharacter:String) {
+	public function new(song:String = "tutorial", week:Int = 0, songCharacter:String = "bf", isFreeplayChart:Bool = false) {
 		this.songName = song;
 		this.week = week;
 		this.songCharacter = songCharacter;
+		this.isFreeplayChart = isFreeplayChart;
 	}
 }
 
@@ -123,14 +125,115 @@ class FreeplayState extends MusicBeatState {
 
 	private var grpSongs:FlxTypedGroup<Alphabet>;
 	private var curPlaying:Bool = false;
+	private var diffTextArrays:Array<Array<String>> = [];
 
 	private var iconArray:Array<HealthIcon> = [];
 
 	public static var id:Int = 1;
+	public static var useAutoDiffSystem:Bool = true;
+	private var ratingArray:Array<Dynamic> = [];
+	private var customSongCheck:Array<Bool> = [];
+
+	function loadSongFromPath(path:String, song:String, freeplayChart:Bool = false) //freeplay is baased off of file directory.
+		{
+			if (useAutoDiffSystem)
+			{
+				#if sys
+				
+				if (FileSystem.exists(path))
+				{
+					var diffs:Array<String> = [];
+					var sortedDiffs:Array<String> = [];
+					var diffTexts:Array<String> = []; //for display text
+					var ratingList:Array<Dynamic> = []; 
+					diffs = FileSystem.readDirectory(path);
+	
+					var easy:String = "";
+					var normal:String = "";
+					var hard:String = "";
+					var extra:Array<String> = [];
+					var extraCount = 0;
+					
+					for (file in diffs)
+					{
+						if (!file.contains(".hscript") && file.endsWith(".json")) //fuck you
+						{
+							if (!file.endsWith(".json")) //get rid of non json files
+								diffs.remove(file);
+							else if (file.endsWith("-easy.json")) //add easy first
+							{
+								easy = file;
+							}
+							else if (file.endsWith(song.toLowerCase() + ".json")) //add normal
+							{
+								normal = file;
+							}
+							else if (file.endsWith("-hard.json")) //add hard
+							{
+								hard = file;
+							}
+							else if (file.endsWith(".json"))
+							{
+								var text:String = StringTools.replace(file, song.toLowerCase() + "-", "");
+								var fixedText:String = StringTools.replace(text,".json", "");
+								extra.push(fixedText.toUpperCase());
+								extraCount++;
+							}
+						}
+	
+	
+					}
+	
+					if (easy != "") //me trying to figure out how to sort the diffs in correct order :(
+					{
+						ratingList.push([0,0]);
+						diffTexts.push("EASY"); //it works pog
+					}
+					if (normal != "")
+					{
+						ratingList.push([0,0]);
+						diffTexts.push("NORMAL");
+					}
+					if (hard != "")
+					{
+						ratingList.push([0,0]);
+						diffTexts.push("HARD");
+					}	
+					if (extraCount != 0)
+					{
+						for (i in extra)
+						{
+							ratingList.push([0,0]);
+							diffTexts.push(i);
+						}
+					}
+	
+							
+	
+					//diffArrays.push(sortedDiffs);
+					diffTextArrays.push(diffTexts);
+					ratingArray.push(ratingList);
+					
+				}
+				#end
+			}
+			else 
+			{
+				var diffTexts = ["EASY", "NORMAL", "HARD"];
+				diffTextArrays.push(diffTexts);
+				var ratingList = [[0,0],[0,0],[0,0]];
+				ratingArray.push(ratingList);
+			}
+		}
 
 	override function create() {
+		PlayState.isStoryMode = false; //so files load properly
+
+		#if !sys
+		useAutoDiffSystem = false;
+		#end
+
 		var parsed = CoolUtil.parseJson(File.getContent('assets/data/freeplaySongJson.jsonc'));
-		//	var freeplayIcons:Array<String> = CoolUtil.coolTextFile(Paths.txt('freeplayIcons')); // FOR TESTING SHIT, MAY SOON BE ADDED
 		trace(parsed[id].songs);
 		trace(parsed[id].categoryIcons);
 		var initSonglist:Dynamic = parsed[id].songs;
@@ -141,7 +244,26 @@ class FreeplayState extends MusicBeatState {
 
 		for (i in 0...initSonglist.length) {
 			songs.push(new SongMetadatas(initSonglist[i], 1, initSonglistIcons[i]));
+			var path = "assets/data/charts/" + initSonglist[i];
+			loadSongFromPath(path, initSonglist[i]);
 		}
+
+		#if sys
+		var freeplayCharts = FileSystem.readDirectory('assets/data/freeplayCharts');
+		if (freeplayCharts.length > 0)
+		{
+			for (chart in freeplayCharts)
+			{
+				if (!chart.contains('.txt'))
+				{
+					songs.push(new SongMetadatas(chart, 0, 'face', true));
+					var path = "assets/data/freeplayCharts/" + chart;
+					loadSongFromPath(path, chart, true);
+				}
+			}
+		}
+
+		#end
 
 		/* 
 			if (FlxG.sound.music != null)
@@ -231,6 +353,8 @@ class FreeplayState extends MusicBeatState {
 			FlxG.save.data.bothSide ? "Both side: On (only 4k songs, turns into 8k) (P)" : "Both side: Off (P)", 16);
 		bothSideText.setFormat(Paths.font("vcr.ttf"), 14, FlxColor.WHITE, RIGHT);
 
+		//curDiff = new DifficultyIcons(CoolUtil.difficultyArray, 1, 0, -1000);
+
 		var settingsBG:FlxSprite = new FlxSprite(randomText.x - 6, 484).makeGraphic(Std.int(FlxG.width * 0.35), 300, 0xFF000000);
 		settingsBG.alpha = 0.6;
 		add(settingsBG);
@@ -246,6 +370,7 @@ class FreeplayState extends MusicBeatState {
 		add(randomText);
 		add(randomModeText);
 		add(maniaText);
+		//add(curDiff);
 		add(flipModeText);
 		add(bothSideText);
 		add(randomManiaText);
@@ -394,9 +519,16 @@ class FreeplayState extends MusicBeatState {
 			FlxG.switchState(new MainMenuState());
 		}
 
-		if (accepted) {
+		if (accepted) { 
 			if (!FlxG.keys.pressed.SHIFT) {
 				// adjusting the song name to be compatible
+				var semiDiff = StringTools.replace(diffText.text, "<", "");
+				var gettinThereDiff = StringTools.replace(semiDiff, ">", "");
+				//now on normal charts, it would add "-normal", so we gotta fix that
+				var nonNormalDiff = StringTools.replace(gettinThereDiff, "-normal", "");
+				var actualDiff = StringTools.replace(nonNormalDiff, " ", "");
+				actualDiff += ".json";
+
 				var songFormat = StringTools.replace(songs[curSelected].songName, " ", "-");
 				switch (songFormat) {
 					case 'Dad-Battle':
@@ -404,6 +536,12 @@ class FreeplayState extends MusicBeatState {
 					case 'Philly-Nice':
 						songFormat = 'Philly';
 				}
+
+				trace('assets/data/charts/' + songFormat.toLowerCase() + '/' + songFormat.toLowerCase() + '-' + actualDiff.toLowerCase());
+
+				var jsonExists = FileSystem.exists('assets/data/charts/' + songFormat.toLowerCase() + '/' + songFormat.toLowerCase() + '-' + actualDiff.toLowerCase());
+
+				if (jsonExists) {
 
 				trace(songs[curSelected].songName);
 
@@ -416,8 +554,35 @@ class FreeplayState extends MusicBeatState {
 				PlayState.storyDifficulty = curDifficulty;
 				PlayState.storyWeek = songs[curSelected].week;
 				trace('CUR WEEK' + PlayState.storyWeek);
+				CoolUtil.CurSongDiffs = diffTextArrays[curSelected];
+				trace('SONG DIFFICULTIES: ' + CoolUtil.CurSongDiffs);
 				LoadingState.loadAndSwitchState(new PlayState());
+				}
+				var jsonExists = FileSystem.exists('assets/data/freeplayCharts/' + songFormat.toLowerCase() + '/' + songFormat.toLowerCase() + '-' + actualDiff.toLowerCase());
+				if (jsonExists) 
+				{
+
+					trace(songs[curSelected].songName);
+					var poop:String = Highscore.formatSong(songFormat, curDifficulty);
+					trace(poop);
+	
+					PlayState.SONG = Song.loadFromJson(poop, songs[curSelected].songName);
+					PlayState.isStoryMode = false;
+					PlayState.storyDifficulty = curDifficulty;
+					PlayState.storyWeek = songs[curSelected].week;
+					trace('CUR WEEK' + PlayState.storyWeek);
+					CoolUtil.CurSongDiffs = diffTextArrays[curSelected];
+					trace('SONG DIFFICULTIES: ' + CoolUtil.CurSongDiffs);
+					LoadingState.loadAndSwitchState(new PlayState());
+					}
 			} else {
+				var semiDiff = StringTools.replace(diffText.text, "<", "");
+				var gettinThereDiff = StringTools.replace(semiDiff, ">", "");
+				//now on normal charts, it would add "-normal", so we gotta fix that
+				var nonNormalDiff = StringTools.replace(gettinThereDiff, "-normal", "");
+				var actualDiff = StringTools.replace(nonNormalDiff, " ", "");
+				actualDiff += ".json";
+
 				// adjusting the song name to be compatible
 				var songFormat = StringTools.replace(songs[curSelected].songName, " ", "-");
 				switch (songFormat) {
@@ -427,29 +592,66 @@ class FreeplayState extends MusicBeatState {
 						songFormat = 'Philly';
 				}
 
+				var jsonExists = FileSystem.exists('assets/data/charts/' + songFormat.toLowerCase() + '/' + songFormat.toLowerCase() + '-' + actualDiff.toLowerCase());
+
+				if (jsonExists) 
+				{
+
 				trace(songs[curSelected].songName);
-
 				var poop:String = Highscore.formatSong(songFormat, curDifficulty);
-
 				trace(poop);
 
 				PlayState.SONG = Song.loadFromJson(poop, songs[curSelected].songName);
 				PlayState.isStoryMode = false;
 				PlayState.storyDifficulty = curDifficulty;
 				PlayState.storyWeek = songs[curSelected].week;
+				CoolUtil.CurSongDiffs = diffTextArrays[curSelected];
+				trace('SONG DIFFICULTIES: ' + CoolUtil.CurSongDiffs);
 				LoadingState.loadAndSwitchState(new ChartingState());
 				Main.editor = true;
+				}
+
+				var jsonExists = FileSystem.exists('assets/data/freeplayCharts/' + songFormat.toLowerCase() + '/' + songFormat.toLowerCase() + '-' + actualDiff.toLowerCase());
+
+				if (jsonExists) {
+				trace(songs[curSelected].songName);
+
+				var poop:String = Highscore.formatSong(songFormat, curDifficulty);
+				trace(poop);
+
+				PlayState.SONG = Song.loadFromJson(poop, songs[curSelected].songName);
+				PlayState.isStoryMode = false;
+				PlayState.storyDifficulty = curDifficulty;
+				PlayState.storyWeek = songs[curSelected].week;
+				CoolUtil.CurSongDiffs = diffTextArrays[curSelected];
+				trace('SONG DIFFICULTIES: ' + CoolUtil.CurSongDiffs);
+				LoadingState.loadAndSwitchState(new ChartingState());
+				Main.editor = true;
+				}
 			}
 		}
 	}
 
 	function changeDiff(change:Int = 0) {
+	/*	var diffJson = CoolUtil.parseJson(File.getContent("assets/images/custom_difficulties/difficulties.json"));
+		var maxDiff:Int = 0;
+		var length = diffJson.difficulties.length - 1;
+		for (i in 0...length)
+		{
+			maxDiff += 1;
+		}
+		trace(maxDiff);*/
+
 		curDifficulty += change;
 
 		if (curDifficulty < 0)
-			curDifficulty = 2;
-		if (curDifficulty > 2)
+			curDifficulty = diffTextArrays[curSelected].length - 1;
+		if (curDifficulty > diffTextArrays[curSelected].length - 1)
 			curDifficulty = 0;
+
+	//	var _diff = DifficultyIcons.changeDifficultyFreeplay(curDifficulty, change);
+
+	//	trace(_diff.difficulty);
 
 		// adjusting the highscore song name to be compatible (changeDiff)
 		var songHighscore = StringTools.replace(songs[curSelected].songName, " ", "-");
@@ -465,7 +667,12 @@ class FreeplayState extends MusicBeatState {
 		combo = Highscore.getCombo(songHighscore, curDifficulty);
 		#end
 
-		diffText.text = CoolUtil.difficultyFromInt(curDifficulty).toUpperCase();
+		diffText.text = '< ' + diffTextArrays[curSelected][curDifficulty] + ' >';
+		/*if (ratingArray[curSelected][curDifficulty] != null)
+		{
+			ratingsText.text = "P1 Rating: " + ratingArray[curSelected][curDifficulty][0];
+			p2ratingsText.text = "P2 Rating: " + ratingArray[curSelected][curDifficulty][1];
+		}	*/
 	}
 
 	function changeSelection(change:Int = 0) {

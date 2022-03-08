@@ -43,7 +43,7 @@ class HscriptShit //funni modcharts
     public var enabled:Bool = false;
     var script:Expr;
 
-    public function new (path:String)
+    public function new (freeplayPath:String, path:String = '')
     {
         #if sys
 		if (FileSystem.exists(path))
@@ -60,7 +60,17 @@ class HscriptShit //funni modcharts
             {
                 trace(e.message);
             }
-
+        }
+        else if (FileSystem.exists(freeplayPath))
+        {
+            try 
+            {
+                loadScript(freeplayPath);
+                enabled = true;
+                setScriptVars();
+                interp.execute(script);
+                trace('HScript loaded Sucessfully. | ' + freeplayPath);
+            } catch(e) { trace(e.message); }
         }
         else if (CacheShit.modcharts[path] != null && PlayState.modcharts)
         {

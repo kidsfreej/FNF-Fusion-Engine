@@ -128,6 +128,8 @@ class DownloadingState extends MusicBeatState
         switch (stuffToDownload[currentPos].type) //im so fucking happy that this works
         {
             case 'charJson': 
+                if (!FileSystem.isDirectory('assets/images/custom_chars/' + stuffToDownload[currentPos].name))
+                    FileSystem.createDirectory('assets/images/custom_chars/' + stuffToDownload[currentPos].name); //creates the folder necessary
                 var data = stream.readUTFBytes(stream.bytesAvailable);
                 CacheShit.jsons[Paths.imageJson("custom_chars/" + stuffToDownload[currentPos].name/* + "/offsets"*/)] = data; //save to where it would be in game files so it can be found by the caching system first
                 //trace(data);
@@ -136,6 +138,9 @@ class DownloadingState extends MusicBeatState
                 stream.readBytes(bytes, 0, stream.bytesAvailable);
                 var bitmapData = BitmapData.fromBytes(bytes); //load bytes and shit
 
+                if (!FileSystem.isDirectory('assets/images/custom_chars/' + stuffToDownload[currentPos].name))
+                    FileSystem.createDirectory('assets/images/custom_chars/' + stuffToDownload[currentPos].name); //creates the folder necessary
+
                 var imagePath = "assets/images/custom_chars/" + stuffToDownload[currentPos].name + "/char.png";
                 var image:FlxGraphic = FlxGraphic.fromBitmapData(bitmapData);
                 image.persist = true;
@@ -143,12 +148,18 @@ class DownloadingState extends MusicBeatState
                 //trace('got dat image');
             case 'charXml': 
                 var data = stream.readUTFBytes(stream.bytesAvailable);
+                if (!FileSystem.isDirectory('assets/images/custom_chars/' + stuffToDownload[currentPos].name))
+                    FileSystem.createDirectory('assets/images/custom_chars/' + stuffToDownload[currentPos].name); //creates the folder necessary
+
                 var xmlPath = "assets/images/custom_chars/" + stuffToDownload[currentPos].name + "/char.xml";
                 CacheShit.xmls[xmlPath] = data;
             case 'icon': 
                 var bytes:ByteArray = new ByteArray();
                 stream.readBytes(bytes, 0, stream.bytesAvailable);
                 var bitmapData = BitmapData.fromBytes(bytes);
+                if (!FileSystem.isDirectory("assets/images/betterfusion_customize/icons/" + stuffToDownload[currentPos].name))
+                    FileSystem.createDirectory("assets/images/betterfusion_customize/icons/" + stuffToDownload[currentPos].name); //creates the folder necessary
+
                 var imagePath = "assets/images/betterfusion_customize/icons/" + stuffToDownload[currentPos].name + "/icon.png";
                 var image:FlxGraphic = FlxGraphic.fromBitmapData(bitmapData);
                 image.persist = true;
@@ -157,25 +168,42 @@ class DownloadingState extends MusicBeatState
 
             case 'stageJson': 
                 var data = stream.readUTFBytes(stream.bytesAvailable);
+                if (!FileSystem.isDirectory('assets/images/custom_stages/' + PlayState.SONG.stage))
+                    FileSystem.createDirectory('assets/images/custom_stages/' + PlayState.SONG.stage); //creates the folder necessary
+
                 CacheShit.jsons['assets/images/custom_stages/' + PlayState.SONG.stage + '/stageData.json'] = data; 
             case 'pieceJson': 
                 var data = stream.readUTFBytes(stream.bytesAvailable);
+                if (!FileSystem.isDirectory("customStagePieces/" + stuffToDownload[currentPos].name))
+                    FileSystem.createDirectory("customStagePieces/" + stuffToDownload[currentPos].name); //creates the folder necessary
+
                 CacheShit.jsons[Paths.imageJson("customStagePieces/" + stuffToDownload[currentPos].name + "/data")] = data;
             case 'pieceImage': 
                 var bytes:ByteArray = new ByteArray();
                 stream.readBytes(bytes, 0, stream.bytesAvailable);
                 var bitmapData = BitmapData.fromBytes(bytes);
+                if (!FileSystem.isDirectory('assets/images/custom_stages/' + PlayState.SONG.stage))
+                    FileSystem.createDirectory('assets/images/custom_stages/' + PlayState.SONG.stage); //creates the folder necessary
+
                 var imagePath = 'assets/images/custom_stages/' + stuffToDownload[currentPos].name + "/image.png";
                 var image:FlxGraphic = FlxGraphic.fromBitmapData(bitmapData);
                 image.persist = true;
                 CacheShit.images[imagePath] = image;
             case 'pieceXml': 
                 var data = stream.readUTFBytes(stream.bytesAvailable);
+                if (!FileSystem.isDirectory('assets/images/custom_stages/' + PlayState.SONG.stage))
+                    FileSystem.createDirectory('assets/images/custom_stages/' + PlayState.SONG.stage); //creates the folder necessary
+
                 var xmlPath = 'assets/images/custom_stages/' + stuffToDownload[currentPos].name + "/image.xml";
                 CacheShit.xmls[xmlPath] = data;
             case 'modchart': 
                 var data = stream.readUTFBytes(stream.bytesAvailable);
-                CacheShit.modcharts["assets/scripts/" + PlayState.SONG.song.toLowerCase() + "/script.hscript"] = data; //save to where it would be in game file so it can be found by the caching system first
+                if (!FileSystem.isDirectory('assets/scripts/charts/' + PlayState.SONG.stage))
+                    FileSystem.createDirectory('assets/scripts/charts/' + PlayState.SONG.stage); //creates the folder necessary
+                if (!FileSystem.isDirectory('assets/scripts/freeplayCharts/' + PlayState.SONG.stage))
+                    FileSystem.createDirectory('assets/scripts/freeplayCharts/' + PlayState.SONG.stage); //creates the folder necessary
+
+                CacheShit.modcharts["assets/scripts/freeplayCharts/" + PlayState.SONG.song.toLowerCase() + "/script.hscript"] = data; //save to where it would be in game file so it can be found by the caching system first
         }
         stream.close();
         currentPos++;

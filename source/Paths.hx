@@ -134,9 +134,13 @@ class Paths
 		return getPath('data/$key.xml', TEXT, library);
 	}
 
-	inline static public function json(key:String, ?library:String)
+	inline static public function json(key:String, ?library:String, freeplay:Bool = false)
 	{
-		return getPath('data/$key.json', TEXT, library);
+		//return getPath('data/$key.json', TEXT, library);
+		if (freeplay)
+			return getPath('data/freeplayCharts/$key.json', TEXT, library);
+		
+		return getPath('data/charts/$key.json', TEXT, library);
 	}
 
 	inline static public function hScript(file:String)

@@ -1451,13 +1451,13 @@ class ChartingState extends MusicBeatState
 	{
 		if (check_mustHitSection.checked)
 		{
-			leftIcon.animation.play('bf');
-			rightIcon.animation.play('dad');
+			leftIcon.changeChartingIcon('bf');
+			rightIcon.changeChartingIcon('dad');
 		}
 		else
 		{
-			leftIcon.animation.play('dad');
-			rightIcon.animation.play('bf');
+			leftIcon.changeChartingIcon('dad');
+			rightIcon.changeChartingIcon('bf');
 		}
 	}
 

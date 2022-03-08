@@ -67,8 +67,9 @@ class MainMenuState extends MusicBeatState
 	public static var firstStart:Bool = true;
 
 	public static var nightly:String = "";
+	public static var kadeEngineVerNum:String = "0.3.1" + nightly;
 
-	public static var kadeEngineVer:String = "1.5.4 EK | Better Fusion Engine" + nightly;
+	public static var kadeEngineVer:String = "Better Fusion Engine 0.3" + nightly;
 	public static var gameVer:String = "0.2.7.1";
 
 	var magenta:FlxSprite;
@@ -167,7 +168,7 @@ class MainMenuState extends MusicBeatState
 
 		FlxG.camera.follow(camFollow, null, 0.60 * (60 / FlxG.save.data.fpsCap));
 
-		var versionShit:FlxText = new FlxText(5, FlxG.height - 18, 0, Application.current.meta.get('version') + ' | Better Fusion Engine 0.2.5 Release', 12);
+		var versionShit:FlxText = new FlxText(5, FlxG.height - 18, 0, Application.current.meta.get('version') + ' | Better Fusion Engine 0.3 Release', 12);
 		versionShit.scrollFactor.set();
 		versionShit.setFormat("VCR OSD Mono", 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(versionShit);
@@ -214,6 +215,9 @@ class MainMenuState extends MusicBeatState
 		{
 			FlxG.sound.music.volume += 0.5 * FlxG.elapsed;
 		}
+
+		FlxG.watch.addQuick("beatShit", curBeat);
+		FlxG.watch.addQuick("stepShit", curStep);
 
 		if (FlxG.keys.justPressed.FIVE)
 		{
@@ -377,15 +381,37 @@ class MainMenuState extends MusicBeatState
 	public static function musicShit():Void
 		{
 			#if sys
-			var initSonglist = FileSystem.readDirectory('assets/songs');
-			if (initSonglist.length > 0)
+			FlxG.sound.music.stop();
+			var parsed = CoolUtil.parseJson(File.getContent('assets/data/freeplaySongJson.jsonc'));
+			var initSonglist:Dynamic = parsed[0].songs;
+			var initSonglistL:Int = 0;
+
+			for (i in  0...initSonglist.length)
+			{ 
+				initSonglistL ++;
+			}
+
+			if (initSonglistL > 0)
 			{
-				var randomSong = FlxG.random.int(0, initSonglist.length - 1);
+				var randomSong = FlxG.random.int(0, initSonglistL - 1);
 	
-				var song = initSonglist[randomSong].toLowerCase();
-		
-				FlxG.sound.playMusic(Sound.fromFile(Paths.inst(song, '')), 0.6, true);
-				curSong = initSonglist[randomSong];
+		//		var song = initSonglist[randomSong].toLowerCase();
+
+				for (i in 0...initSonglist.length)
+				{
+					var r = FlxG.random.int(0, initSonglistL - 1);
+					var s = initSonglist[i];
+
+					if (r == i && FlxG.sound.music == null) {
+					//	FlxG.sound.playMusic(Sound.fromFile(Paths.inst(songs[curSelected].songName.toLowerCase(), '')), 1, false);
+						trace(Std.string(s.toLowerCase()));
+						FlxG.sound.playMusic(Sound.fromFile(Paths.inst(Std.string(s.toLowerCase()), '')), 0.6, true);
+						curSong = Std.string(s);
+					}
+				}
+
+				if (FlxG.sound.music == null)
+					FlxG.sound.playMusic(Paths.music('freakyMenu'), 1);
 			}
 			else 
 				FlxG.sound.playMusic(Paths.music('freakyMenu'), 1);
