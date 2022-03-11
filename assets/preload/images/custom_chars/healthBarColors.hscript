@@ -1,0 +1,37 @@
+function loadColor(character) {
+    //so this loads the chraracter health bar colors.
+    //too lazy to make another function so this is it.
+    //you don't have to include one, it will default.
+    switch (character.curCharacter) 
+    {
+        case 'bf' | 'bf-christmas' | 'bf-car':
+            character.playerColor = 0xFFFF31B0D1; 
+
+        case 'gf' | 'gf-christmas' | 'gf-car':
+            character.enemyColor = 0xFFFFA5004D;
+
+        case 'dad':
+            character.enemyColor = 0xFFFFAF66CE;
+
+        case 'spooky':
+            character.enemyColor = 0xFFFFBDA47F;
+
+        case 'mom' | 'mom-car':
+            character.enemyColor = 0xFFFFD8558E;
+
+        case 'parents-christmas' | 'parents':
+            character.enemyColor = 0xFFFFD65555;
+
+        case 'monster' | 'newmonster' | 'monster-christmas':
+            character.enemyColor = 0xFFFFF3FF6E;
+
+        case 'pico':
+            character.enemyColor = 0xFFFFD57E00;
+
+        case 'senpai' | 'senpai-angry' | 'orphan': //LMAOOO
+            character.enemyColor = 0xFFFFFFAA6F;
+
+        case 'spirit':
+            character.enemyColor = 0xFFFFFF3C6E;
+    }
+}

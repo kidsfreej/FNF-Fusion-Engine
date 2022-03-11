@@ -67,9 +67,9 @@ class MainMenuState extends MusicBeatState
 	public static var firstStart:Bool = true;
 
 	public static var nightly:String = "";
-	public static var kadeEngineVerNum:String = "0.3.1" + nightly;
+	public static var kadeEngineVerNum:String = "0.4" + nightly;
 
-	public static var kadeEngineVer:String = "Better Fusion Engine 0.3" + nightly;
+	public static var kadeEngineVer:String = "Better Fusion Engine 0.4" + nightly;
 	public static var gameVer:String = "0.2.7.1";
 
 	var magenta:FlxSprite;

@@ -1,82 +1,102 @@
 {
   "template": {
     "like": "bf",
-    "icons": [0,1]
+    "icons": [0,1,24]
   },
-  "templateBfCar": {
+  "bf": {
+    "like": "bf",
+    "icons": [0,1,2,3]
+  },
+  "bf-car": {
     "like": "bf-car",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateBfChristmas": {
+  "bf-christmas": {
     "like": "bf-christmas",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateBfPixel": {
+  "bf-pixel": {
     "like": "bf-pixel",
-    "icons": [0,1]
+    "icons": [0,1,2]
   },
-  "templateDad": {
+  "bulb-pixel": {
+    "like": "bf-pixel",
+    "icons": [0,1,2]
+  },
+  "dad": {
     "like": "dad",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateGfCar": {
+  "gf-car": {
     "like": "gf-car",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateGfPixel": {
+  "gf-pixel": {
     "like": "gf-pixel",
-    "icons": [0,1]
+    "icons": [0,1,2]
   },
-  "templateGf": {
+  "gf-christmas": {
     "like": "gf",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
+  },
+  "gf": {
+    "like": "gf",
+    "icons": [0,1,2,3]
   },
   "templateMonster": {
     "like": "monster",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateNewMonster": {
+  "monster": {
     "like": "newmonster",
-    "icons": [0,1]
+    "icons": [0,1,2]
   },
-  "templateParents": {
+  "monster-christmas": {
+    "like": "monster-christmas",
+    "icons": [0,1,2]
+  },
+  "parents-christmas": {
     "like": "parents",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templatePico": {
+  "pico": {
     "like": "pico",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateSenpaiAngry": {
+  "senpai-angry": {
     "like": "senpai-angry",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateSenpai": {
+  "senpai": {
     "like": "senpai",
-    "icons": [0,1]
+    "icons": [0,1,2]
   },
-  "templateSpirit": {
-    "like": "bf-christmas",
-    "icons": [0,1]
+  "spirit": {
+    "like": "spirit",
+    "icons": [0,1,2]
   },
-  "templateSpooky": {
+  "spooky": {
     "like": "spooky",
-    "icons": [0,1]
+    "icons": [0,1,2,3]
   },
-  "templateMom": {
+  "mom": {
     "like": "mom",
-    "icons": [6,7]
+    "icons": [0,1,2,3]
+  },
+  "mom-car": {
+    "like": "mom-car",
+    "icons": [0,1,2,3]
   },
   "templateSenpai-hd": {
     "like": "senpai-hd",
-    "icons": [22,22]
+    "icons": [0,1,2]
   },
   "templateSenpaiAngry-hd": {
     "like": "senpai-angry-hd",
-    "icons": [22,22]
+    "icons": [0,1,2]
   },
   "templateSpirit-hd": {
     "like": "spirit-hd",
-    "icons": [23,23]
+    "icons": [0,1,2]
   }
 }

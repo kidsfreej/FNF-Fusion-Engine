@@ -1,5 +1,5 @@
-0.3.1;
-- Fixed Story Menu Cutscenes
-- Added Custom Difficulties
-- Added Custom Credits
-- Fixed Crashing on Menu
+0.4;
+- Added Support for Character Hscripts.
+- Added Universal Hscripts
+- Added a Hscript for getting Health Bar Colors
+- Added Support for Changing Character and Stage midsong

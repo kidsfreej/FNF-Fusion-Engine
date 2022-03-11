@@ -1,0 +1,9 @@
+function onCharChange(char)
+{
+    switch (char.curCharacter) //char is actual character. curCharacter is string name.
+    {
+        //when a new character exists it usually just defaults to 0, 0.
+        //so you gotta fix that.
+        //if you want stage do, PlayState.SONG.stage
+    }
+}

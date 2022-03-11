@@ -31,6 +31,8 @@ import openfl.utils.AssetType;
 import openfl.utils.Assets;
 import haxe.Json;
 import haxe.format.JsonParser;
+import flixel.util.FlxColor;
+import flixel.graphics.FlxGraphic;
 
 using StringTools;
 
@@ -49,7 +51,6 @@ typedef CharacterFile = {
 	var healthbar_color:Array<Int>;
 	var hasNoteSkin:Bool;
 }
-
 typedef AnimArray = {
 	var anim:String;
 	var name:String;
@@ -58,10 +59,28 @@ typedef AnimArray = {
 	var indices:Array<Int>;
 	var offsets:Array<Int>;
 }
+enum abstract EpicLevel(Int) from Int to Int {
+	var Level_NotAHoe = 0;
+	var Level_Boogie = 1;
+	var Level_Sadness = 2;
+	var Level_Sing = 3;
 
+	@:op(A > B) static function gt(a:EpicLevel, b:EpicLevel):Bool;
+	@:op(A >= B) static function gte(a:EpicLevel, b:EpicLevel):Bool;
+	@:op(A == B) static function equals(a:EpicLevel, b:EpicLevel):Bool;
+	@:op(A != B) static function nequals(a:EpicLevel, b:EpicLevel):Bool;
+	@:op(A < B) static function lt(a:EpicLevel, b:EpicLevel):Bool;
+	@:op(A <= B) static function lte(a:EpicLevel, b:EpicLevel):Bool;
+}
+typedef TCharacterRefJson = {
+	var like:String;
+	var icons:Array<Int>;
+	var ?colors:Array<String>;
+}
 class Character extends FlxSprite
 {
 	public var animOffsets:Map<String, Array<Dynamic>>;
+	public var camOffsets:Map<String, Array<Dynamic>>;
 	public var debugMode:Bool = false;
 
 	public var isPlayer:Bool = false;
@@ -78,7 +97,53 @@ class Character extends FlxSprite
 	public var holdTimer:Float = 0;
 	public var like:String = "bf";
 	public var isDie:Bool = false;
-	public var isPixel:Bool = false;
+	public var beNormal:Bool = true;
+
+	//modding+
+
+	/**
+	 * Color used by default for enemy, when not in duo mode or oppnt play.
+	 */
+	 public var enemyColor:FlxColor = 0xFFFF0000;
+	 /**
+	  * Color used by default for enemy in duo mode and oppnt play.
+	  */
+	 public var opponentColor:FlxColor = 0xFFE7C53C;
+	 /**
+	  * Color used by player while not in duo mode or oppnt play.
+	  */
+	 public var playerColor:FlxColor = 0xFF66FF33;
+	 /**
+	  * Color used by player when poisoned in fragile funkin.
+	  */
+	 public var poisonColor:FlxColor = 0xFFA22CD1;
+	 /**
+	  * Color used by enemy when poisoned in fragile funkin. 
+	  */
+	 public var poisonColorEnemy:FlxColor = 0xFFEA2FFF;
+	 /**
+	  * Color used by player in duo mode or oppnt play.
+	  */
+	 public var bfColor:FlxColor = 0xFF149DFF;
+	 // sits on speakers, replaces gf
+	 public var likeGf:Bool = false;
+	 // uses animation notes
+	 public var hasGun:Bool = false;
+	// public var stunned(get, default):Bool = false;
+	 public var beingControlled:Bool = false;
+	 /**
+	  * how many animations our current gf supports. 
+	  * acts like a level meter, 0 means we aren't gf,
+	  * 1 means we support the least animations (i think pixel-gf)
+	  * 2 means we support the middle amount of animations (i think gf-tankmen)
+	  * 3 means we support the full amount of animations (regular gf)
+	  * you can have an epic level lower than your actual animations, 
+	  * but the game will be safe and act like you don't have one.
+	  */
+	 public var gfEpicLevel:EpicLevel = Level_NotAHoe;
+	 // like bf, is playable
+	 public var likeBf:Bool = false;
+	 public var isPixel:Bool = false;
 
 	//extra stuff
 
@@ -111,16 +176,34 @@ class Character extends FlxSprite
 
 	public var charHasNoteSkin:Bool = false;
 	public var isPsychFile:Bool = false;
+	public var isModFile:Bool = false;
 	public var setLike:Bool = true;
 	public var isPlayingAsBF:Bool = false;
+	public var charScript:HscriptShit;
+	public var colorScript:HscriptShit;
+	public var hscriptPath:String = 'assets/images/custom_chars/';
+	var noDanceTwice:Int = 0;
+
+	public function call(tfisthis:String, shitToGoIn:Array<Dynamic>) //basically Psych Engine's **callOnLuas**
+	{
+		if (charScript.enabled)
+			charScript.call(tfisthis, shitToGoIn); //because
+	}
+	public function callColor(tfisthis:String, shitToGoIn:Array<Dynamic>) //basically Psych Engine's **callOnLuas**
+	{
+		if (colorScript.enabled)
+			colorScript.call(tfisthis, shitToGoIn); //because
+	}
 
 	public function new(x:Float, y:Float, ?character:String = "bf", ?isPlayer:Bool = false)
 	{
+		animOffsets = new Map<String, Array<Dynamic>>();
+		camOffsets = new Map<String, Array<Dynamic>>();
 		super(x, y);
 
-		animOffsets = new Map<String, Array<Dynamic>>();
 		curCharacter = character;
 		this.isPlayer = isPlayer;
+		this.hscriptPath += (character + '/');
 
 		isPlayingAsBF = !FlxG.save.data.flip;
 
@@ -129,483 +212,40 @@ class Character extends FlxSprite
 
 		switch (curCharacter)
 		{
-			case 'gf':
-				// GIRLFRIEND CODE
-				tex = Paths.getSparrowAtlas('characters/GF_assets');
-				frames = tex;
-				animation.addByPrefix('cheer', 'GF Cheer', 24, false);
-				animation.addByPrefix('singLEFT', 'GF left note', 24, false);
-				animation.addByPrefix('singRIGHT', 'GF Right Note', 24, false);
-				animation.addByPrefix('singUP', 'GF Up Note', 24, false);
-				animation.addByPrefix('singDOWN', 'GF Down Note', 24, false);
-				animation.addByIndices('sad', 'gf sad', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "", 24, false);
-				animation.addByIndices('danceLeft', 'GF Dancing Beat', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
-				animation.addByIndices('danceRight', 'GF Dancing Beat', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
-				animation.addByIndices('hairBlow', "GF Dancing Beat Hair blowing", [0, 1, 2, 3], "", 24);
-				animation.addByIndices('hairFall', "GF Dancing Beat Hair Landing", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "", 24, false);
-				animation.addByPrefix('scared', 'GF FEAR', 24);
-
-				addOffset('cheer');
-				addOffset('sad', -2, -2);
-				addOffset('danceLeft', 0, -9);
-				addOffset('danceRight', 0, -9);
-
-				addOffset("singUP", 0, 4);
-				addOffset("singRIGHT", 0, -20);
-				addOffset("singLEFT", 0, -19);
-				addOffset("singDOWN", 0, -20);
-				addOffset('hairBlow', 45, -8);
-				addOffset('hairFall', 0, -9);
-
-				addOffset('scared', -2, -17);
-
-				playAnim('danceRight');
-
-			case 'gf-christmas':
-				tex = Paths.getSparrowAtlas('characters/gfChristmas');
-				frames = tex;
-				animation.addByPrefix('cheer', 'GF Cheer', 24, false);
-				animation.addByPrefix('singLEFT', 'GF left note', 24, false);
-				animation.addByPrefix('singRIGHT', 'GF Right Note', 24, false);
-				animation.addByPrefix('singUP', 'GF Up Note', 24, false);
-				animation.addByPrefix('singDOWN', 'GF Down Note', 24, false);
-				animation.addByIndices('sad', 'gf sad', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "", 24, false);
-				animation.addByIndices('danceLeft', 'GF Dancing Beat', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
-				animation.addByIndices('danceRight', 'GF Dancing Beat', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
-				animation.addByIndices('hairBlow', "GF Dancing Beat Hair blowing", [0, 1, 2, 3], "", 24);
-				animation.addByIndices('hairFall', "GF Dancing Beat Hair Landing", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "", 24, false);
-				animation.addByPrefix('scared', 'GF FEAR', 24);
-
-				addOffset('cheer');
-				addOffset('sad', -2, -2);
-				addOffset('danceLeft', 0, -9);
-				addOffset('danceRight', 0, -9);
-
-				addOffset("singUP", 0, 4);
-				addOffset("singRIGHT", 0, -20);
-				addOffset("singLEFT", 0, -19);
-				addOffset("singDOWN", 0, -20);
-				addOffset('hairBlow', 45, -8);
-				addOffset('hairFall', 0, -9);
-
-				addOffset('scared', -2, -17);
-
-				playAnim('danceRight');
-
-			case 'gf-car':
-				tex = Paths.getSparrowAtlas('characters/gfCar');
-				frames = tex;
-				animation.addByIndices('singUP', 'GF Dancing Beat Hair blowing CAR', [0], "", 24, false);
-				animation.addByIndices('danceLeft', 'GF Dancing Beat Hair blowing CAR', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
-				animation.addByIndices('danceRight', 'GF Dancing Beat Hair blowing CAR', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24,
-					false);
-
-				addOffset('danceLeft', 0);
-				addOffset('danceRight', 0);
-
-				playAnim('danceRight');
-
-			case 'gf-pixel':
-				tex = Paths.getSparrowAtlas('characters/gfPixel');
-				frames = tex;
-				animation.addByIndices('singUP', 'GF IDLE', [2], "", 24, false);
-				animation.addByIndices('danceLeft', 'GF IDLE', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
-				animation.addByIndices('danceRight', 'GF IDLE', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
-
-				addOffset('danceLeft', 0);
-				addOffset('danceRight', 0);
-
-				playAnim('danceRight');
-
-				setGraphicSize(Std.int(width * PlayState.daPixelZoom));
-				updateHitbox();
-				antialiasing = false;
-
-			case 'dad':
-				// DAD ANIMATION LOADING CODE
-				tex = Paths.getSparrowAtlas('characters/DADDY_DEAREST', 'shared');
-				frames = tex;
-				animation.addByPrefix('idle', 'Dad idle dance', 24);
-				animation.addByPrefix('singUP', 'Dad Sing Note UP', 24);
-				animation.addByPrefix('singRIGHT', 'Dad Sing Note RIGHT', 24);
-				animation.addByPrefix('singDOWN', 'Dad Sing Note DOWN', 24);
-				animation.addByPrefix('singLEFT', 'Dad Sing Note LEFT', 24);
-
-				addOffset('idle');
-				addOffset("singUP", -6, 50);
-				addOffset("singRIGHT", 0, 27);
-				addOffset("singLEFT", -10, 10);
-				addOffset("singDOWN", 0, -30);
-
-				playAnim('idle');
-			case 'spooky':
-				tex = Paths.getSparrowAtlas('characters/spooky_kids_assets');
-				frames = tex;
-				animation.addByPrefix('singUP', 'spooky UP NOTE', 24, false);
-				animation.addByPrefix('singDOWN', 'spooky DOWN note', 24, false);
-				animation.addByPrefix('singLEFT', 'note sing left', 24, false);
-				animation.addByPrefix('singRIGHT', 'spooky sing right', 24, false);
-				animation.addByIndices('danceLeft', 'spooky dance idle', [0, 2, 6], "", 12, false);
-				animation.addByIndices('danceRight', 'spooky dance idle', [8, 10, 12, 14], "", 12, false);
-
-				addOffset('danceLeft');
-				addOffset('danceRight');
-
-				addOffset("singUP", -20, 26);
-				addOffset("singRIGHT", -130, -14);
-				addOffset("singLEFT", 130, -10);
-				addOffset("singDOWN", -50, -130);
-
-				playAnim('danceRight');
-			case 'mom':
-				tex = Paths.getSparrowAtlas('characters/Mom_Assets');
-				frames = tex;
-
-				animation.addByPrefix('idle', "Mom Idle", 24, false);
-				animation.addByPrefix('singUP', "Mom Up Pose", 24, false);
-				animation.addByPrefix('singDOWN', "MOM DOWN POSE", 24, false);
-				animation.addByPrefix('singLEFT', 'Mom Left Pose', 24, false);
-				// ANIMATION IS CALLED MOM LEFT POSE BUT ITS FOR THE RIGHT
-				// CUZ DAVE IS DUMB!
-				animation.addByPrefix('singRIGHT', 'Mom Pose Left', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", 14, 71);
-				addOffset("singRIGHT", 10, -60);
-				addOffset("singLEFT", 250, -23);
-				addOffset("singDOWN", 20, -160);
-
-				playAnim('idle');
-
-			case 'mom-car':
-				tex = Paths.getSparrowAtlas('characters/momCar');
-				frames = tex;
-
-				animation.addByPrefix('idle', "Mom Idle", 24, false);
-				animation.addByPrefix('singUP', "Mom Up Pose", 24, false);
-				animation.addByPrefix('singDOWN', "MOM DOWN POSE", 24, false);
-				animation.addByPrefix('singLEFT', 'Mom Left Pose', 24, false);
-				// ANIMATION IS CALLED MOM LEFT POSE BUT ITS FOR THE RIGHT
-				// CUZ DAVE IS DUMB!
-				animation.addByPrefix('singRIGHT', 'Mom Pose Left', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", 14, 71);
-				addOffset("singRIGHT", 10, -60);
-				addOffset("singLEFT", 250, -23);
-				addOffset("singDOWN", 20, -160);
-
-				playAnim('idle');
-			case 'monster':
-				tex = Paths.getSparrowAtlas('characters/Monster_Assets');
-				frames = tex;
-				animation.addByPrefix('idle', 'monster idle', 24, false);
-				animation.addByPrefix('singUP', 'monster up note', 24, false);
-				animation.addByPrefix('singDOWN', 'monster down', 24, false);
-				animation.addByPrefix('singLEFT', 'Monster left note', 24, false);
-				animation.addByPrefix('singRIGHT', 'Monster Right note', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", -20, 50);
-				addOffset("singRIGHT", -51);
-				addOffset("singLEFT", -30);
-				addOffset("singDOWN", -30, -40);
-				playAnim('idle');
-			case 'monster-christmas':
-				tex = Paths.getSparrowAtlas('characters/monsterChristmas');
-				frames = tex;
-				animation.addByPrefix('idle', 'monster idle', 24, false);
-				animation.addByPrefix('singUP', 'monster up note', 24, false);
-				animation.addByPrefix('singDOWN', 'monster down', 24, false);
-				animation.addByPrefix('singLEFT', 'Monster left note', 24, false);
-				animation.addByPrefix('singRIGHT', 'Monster Right note', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", -20, 50);
-				addOffset("singRIGHT", -51);
-				addOffset("singLEFT", -30);
-				addOffset("singDOWN", -40, -94);
-				playAnim('idle');
-			case 'pico':
-				tex = Paths.getSparrowAtlas('characters/Pico_FNF_assetss');
-				frames = tex;
-				animation.addByPrefix('idle', "Pico Idle Dance", 24);
-				animation.addByPrefix('singUP', 'pico Up note0', 24, false);
-				animation.addByPrefix('singDOWN', 'Pico Down Note0', 24, false);
-				if (isPlayer)
-				{
-					animation.addByPrefix('singLEFT', 'Pico NOTE LEFT0', 24, false);
-					animation.addByPrefix('singRIGHT', 'Pico Note Right0', 24, false);
-					animation.addByPrefix('singRIGHTmiss', 'Pico Note Right Miss', 24, false);
-					animation.addByPrefix('singLEFTmiss', 'Pico NOTE LEFT miss', 24, false);
-				}
-				else
-				{
-					// Need to be flipped! REDO THIS LATER!
-					animation.addByPrefix('singLEFT', 'Pico Note Right0', 24, false);
-					animation.addByPrefix('singRIGHT', 'Pico NOTE LEFT0', 24, false);
-					animation.addByPrefix('singRIGHTmiss', 'Pico NOTE LEFT miss', 24, false);
-					animation.addByPrefix('singLEFTmiss', 'Pico Note Right Miss', 24, false);
-				}
-
-				animation.addByPrefix('singUPmiss', 'pico Up note miss', 24);
-				animation.addByPrefix('singDOWNmiss', 'Pico Down Note MISS', 24);
-
-				addOffset('idle');
-				addOffset("singUP", -29, 27);
-				addOffset("singRIGHT", -68, -7);
-				addOffset("singLEFT", 65, 9);
-				addOffset("singDOWN", 200, -70);
-				addOffset("singUPmiss", -19, 67);
-				addOffset("singRIGHTmiss", -60, 41);
-				addOffset("singLEFTmiss", 62, 64);
-				addOffset("singDOWNmiss", 210, -28);
-
-				playAnim('idle');
-
-				flipX = true;
-
-			case 'bf':
-				var tex = Paths.getSparrowAtlas('characters/BOYFRIEND', 'shared');
-				frames = tex;
-
-				trace(tex.frames.length);
-
-				animation.addByPrefix('idle', 'BF idle dance', 24, false);
-				animation.addByPrefix('singUP', 'BF NOTE UP0', 24, false);
-				animation.addByPrefix('singLEFT', 'BF NOTE LEFT0', 24, false);
-				animation.addByPrefix('singRIGHT', 'BF NOTE RIGHT0', 24, false);
-				animation.addByPrefix('singDOWN', 'BF NOTE DOWN0', 24, false);
-				animation.addByPrefix('singUPmiss', 'BF NOTE UP MISS', 24, false);
-				animation.addByPrefix('singLEFTmiss', 'BF NOTE LEFT MISS', 24, false);
-				animation.addByPrefix('singRIGHTmiss', 'BF NOTE RIGHT MISS', 24, false);
-				animation.addByPrefix('singDOWNmiss', 'BF NOTE DOWN MISS', 24, false);
-				animation.addByPrefix('hey', 'BF HEY', 24, false);
-				animation.addByPrefix('singHey', 'BF HEY', 24, false);
-				animation.addByPrefix('hit', 'BF hit', 24, false);
-
-				animation.addByPrefix('firstDeath', "BF dies", 24, false);
-				animation.addByPrefix('deathLoop', "BF Dead Loop", 24, true);
-				animation.addByPrefix('deathConfirm', "BF Dead confirm", 24, false);
-
-				animation.addByPrefix('scared', 'BF idle shaking', 24);
-
-				addOffset('idle', -5);
-				addOffset("singUP", -29, 27);
-				addOffset("singRIGHT", -38, -7);
-				addOffset("singLEFT", 12, -6);
-				addOffset("singDOWN", -10, -50);
-				addOffset("singUPmiss", -29, 27);
-				addOffset("singRIGHTmiss", -30, 21);
-				addOffset("singLEFTmiss", 12, 24);
-				addOffset("singDOWNmiss", -11, -19);
-				addOffset("hey", 7, 4);
-				addOffset("singHey", 7, 4);
-				addOffset('firstDeath', 37, 11);
-				addOffset('deathLoop', 37, 5);
-				addOffset('deathConfirm', 37, 69);
-				addOffset('scared', -4);
-
-				playAnim('idle');
-
-				flipX = true;
-
-			case 'bf-christmas':
-				var tex = Paths.getSparrowAtlas('characters/bfChristmas');
-				frames = tex;
-				animation.addByPrefix('idle', 'BF idle dance', 24, false);
-				animation.addByPrefix('singUP', 'BF NOTE UP0', 24, false);
-				animation.addByPrefix('singLEFT', 'BF NOTE LEFT0', 24, false);
-				animation.addByPrefix('singRIGHT', 'BF NOTE RIGHT0', 24, false);
-				animation.addByPrefix('singDOWN', 'BF NOTE DOWN0', 24, false);
-				animation.addByPrefix('singUPmiss', 'BF NOTE UP MISS', 24, false);
-				animation.addByPrefix('singLEFTmiss', 'BF NOTE LEFT MISS', 24, false);
-				animation.addByPrefix('singRIGHTmiss', 'BF NOTE RIGHT MISS', 24, false);
-				animation.addByPrefix('singDOWNmiss', 'BF NOTE DOWN MISS', 24, false);
-				animation.addByPrefix('hey', 'BF HEY', 24, false);
-				animation.addByPrefix('singHey', 'BF HEY', 24, false);
-
-				addOffset('idle', -5);
-				addOffset("singUP", -29, 27);
-				addOffset("singRIGHT", -38, -7);
-				addOffset("singLEFT", 12, -6);
-				addOffset("singDOWN", -10, -50);
-				addOffset("singUPmiss", -29, 27);
-				addOffset("singRIGHTmiss", -30, 21);
-				addOffset("singLEFTmiss", 12, 24);
-				addOffset("singDOWNmiss", -11, -19);
-				addOffset("hey", 7, 4);
-				addOffset("singHey", 7, 4);
-
-				playAnim('idle');
-
-				flipX = true;
-			case 'bf-car':
-				var tex = Paths.getSparrowAtlas('characters/bfCar');
-				frames = tex;
-				animation.addByPrefix('idle', 'BF idle dance', 24, false);
-				animation.addByPrefix('singUP', 'BF NOTE UP0', 24, false);
-				animation.addByPrefix('singLEFT', 'BF NOTE LEFT0', 24, false);
-				animation.addByPrefix('singRIGHT', 'BF NOTE RIGHT0', 24, false);
-				animation.addByPrefix('singDOWN', 'BF NOTE DOWN0', 24, false);
-				animation.addByPrefix('singUPmiss', 'BF NOTE UP MISS', 24, false);
-				animation.addByPrefix('singLEFTmiss', 'BF NOTE LEFT MISS', 24, false);
-				animation.addByPrefix('singRIGHTmiss', 'BF NOTE RIGHT MISS', 24, false);
-				animation.addByPrefix('singDOWNmiss', 'BF NOTE DOWN MISS', 24, false);
-
-				addOffset('idle', -5);
-				addOffset("singUP", -29, 27);
-				addOffset("singRIGHT", -38, -7);
-				addOffset("singLEFT", 12, -6);
-				addOffset("singDOWN", -10, -50);
-				addOffset("singUPmiss", -29, 27);
-				addOffset("singRIGHTmiss", -30, 21);
-				addOffset("singLEFTmiss", 12, 24);
-				addOffset("singDOWNmiss", -11, -19);
-				playAnim('idle');
-
-				flipX = true;
-			case 'bf-pixel':
-				frames = Paths.getSparrowAtlas('characters/bfPixel');
-				animation.addByPrefix('idle', 'BF IDLE', 24, false);
-				animation.addByPrefix('singUP', 'BF UP NOTE', 24, false);
-				animation.addByPrefix('singLEFT', 'BF LEFT NOTE', 24, false);
-				animation.addByPrefix('singRIGHT', 'BF RIGHT NOTE', 24, false);
-				animation.addByPrefix('singDOWN', 'BF DOWN NOTE', 24, false);
-				animation.addByPrefix('singUPmiss', 'BF UP MISS', 24, false);
-				animation.addByPrefix('singLEFTmiss', 'BF LEFT MISS', 24, false);
-				animation.addByPrefix('singRIGHTmiss', 'BF RIGHT MISS', 24, false);
-				animation.addByPrefix('singDOWNmiss', 'BF DOWN MISS', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP");
-				addOffset("singRIGHT");
-				addOffset("singLEFT");
-				addOffset("singDOWN");
-				addOffset("singUPmiss");
-				addOffset("singRIGHTmiss");
-				addOffset("singLEFTmiss");
-				addOffset("singDOWNmiss");
-
-				setGraphicSize(Std.int(width * 6));
-				updateHitbox();
-
-				playAnim('idle');
-
-				width -= 100;
-				height -= 100;
-
-				antialiasing = false;
-
-				flipX = true;
-			case 'bf-pixel-dead':
-				frames = Paths.getSparrowAtlas('characters/bfPixelsDEAD');
-				animation.addByPrefix('singUP', "BF Dies pixel", 24, false);
-				animation.addByPrefix('firstDeath', "BF Dies pixel", 24, false);
-				animation.addByPrefix('deathLoop', "Retry Loop", 24, true);
-				animation.addByPrefix('deathConfirm', "RETRY CONFIRM", 24, false);
-				animation.play('firstDeath');
-
-				addOffset('firstDeath');
-				addOffset('deathLoop', -37);
-				addOffset('deathConfirm', -37);
-				playAnim('firstDeath');
-				// pixel bullshit
-				setGraphicSize(Std.int(width * 6));
-				updateHitbox();
-				antialiasing = false;
-				flipX = true;
-
-			case 'senpai':
-				frames = Paths.getSparrowAtlas('characters/senpai');
-				animation.addByPrefix('idle', 'Senpai Idle', 24, false);
-				animation.addByPrefix('singUP', 'SENPAI UP NOTE', 24, false);
-				animation.addByPrefix('singLEFT', 'SENPAI LEFT NOTE', 24, false);
-				animation.addByPrefix('singRIGHT', 'SENPAI RIGHT NOTE', 24, false);
-				animation.addByPrefix('singDOWN', 'SENPAI DOWN NOTE', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", 5, 37);
-				addOffset("singRIGHT");
-				addOffset("singLEFT", 40);
-				addOffset("singDOWN", 14);
-
-				playAnim('idle');
-
-				setGraphicSize(Std.int(width * 6));
-				updateHitbox();
-
-				antialiasing = false;
-			case 'senpai-angry':
-				frames = Paths.getSparrowAtlas('characters/senpai');
-				animation.addByPrefix('idle', 'Angry Senpai Idle', 24, false);
-				animation.addByPrefix('singUP', 'Angry Senpai UP NOTE', 24, false);
-				animation.addByPrefix('singLEFT', 'Angry Senpai LEFT NOTE', 24, false);
-				animation.addByPrefix('singRIGHT', 'Angry Senpai RIGHT NOTE', 24, false);
-				animation.addByPrefix('singDOWN', 'Angry Senpai DOWN NOTE', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", 5, 37);
-				addOffset("singRIGHT");
-				addOffset("singLEFT", 40);
-				addOffset("singDOWN", 14);
-				playAnim('idle');
-
-				setGraphicSize(Std.int(width * 6));
-				updateHitbox();
-
-				antialiasing = false;
-
-			case 'spirit':
-				frames = Paths.getPackerAtlas('characters/spirit');
-				animation.addByPrefix('idle', "idle spirit_", 24, false);
-				animation.addByPrefix('singUP', "up_", 24, false);
-				animation.addByPrefix('singRIGHT', "right_", 24, false);
-				animation.addByPrefix('singLEFT', "left_", 24, false);
-				animation.addByPrefix('singDOWN', "spirit down_", 24, false);
-
-				addOffset('idle', -220, -280);
-				addOffset('singUP', -220, -240);
-				addOffset("singRIGHT", -220, -280);
-				addOffset("singLEFT", -200, -280);
-				addOffset("singDOWN", 170, 110);
-
-				setGraphicSize(Std.int(width * 6));
-				updateHitbox();
-
-				playAnim('idle');
-
-				antialiasing = false;
-
-			case 'parents-christmas':
-				frames = Paths.getSparrowAtlas('characters/mom_dad_christmas_assets');
-				animation.addByPrefix('idle', 'Parent Christmas Idle', 24, false);
-				animation.addByPrefix('singUP', 'Parent Up Note Dad', 24, false);
-				animation.addByPrefix('singDOWN', 'Parent Down Note Dad', 24, false);
-				animation.addByPrefix('singLEFT', 'Parent Left Note Dad', 24, false);
-				animation.addByPrefix('singRIGHT', 'Parent Right Note Dad', 24, false);
-
-				animation.addByPrefix('singUP-alt', 'Parent Up Note Mom', 24, false);
-
-				animation.addByPrefix('singDOWN-alt', 'Parent Down Note Mom', 24, false);
-				animation.addByPrefix('singLEFT-alt', 'Parent Left Note Mom', 24, false);
-				animation.addByPrefix('singRIGHT-alt', 'Parent Right Note Mom', 24, false);
-
-				addOffset('idle');
-				addOffset("singUP", -47, 24);
-				addOffset("singRIGHT", -1, -23);
-				addOffset("singLEFT", -30, 16);
-				addOffset("singDOWN", -31, -29);
-				addOffset("singUP-alt", -47, 24);
-				addOffset("singRIGHT-alt", -1, -24);
-				addOffset("singLEFT-alt", -30, 15);
-				addOffset("singDOWN-alt", -30, -27);
-
-				playAnim('idle');
-			default:
+			default: //you can case your character if you want to, but would rather u use hscript or json.
 				setLike = false;
 				if (FileSystem.exists("assets/images/custom_chars/psych-"+curCharacter+".json"))
 					isPsychFile = true;
+
+				if (FileSystem.exists("assets/images/custom_chars/"+curCharacter+".hscript")) {
+					var tex:FlxAtlasFrames;
+					antialiasing = true;
+
+					curCharacter = curCharacter.trim();
+					trace(curCharacter);
+					isCustom = true;
+					if (StringTools.endsWith(curCharacter, "-dead"))
+					{
+						isDie = true;
+						curCharacter = curCharacter.substr(0, curCharacter.length - 5);
+					}
+
+					// failsafe so you dont crash when loading a nonexistant character :)
+					if (!FileSystem.exists('assets/images/custom_chars/' + character) && !isDie) {
+						curCharacter = 'dad';
+						trace(character + ' doesnt exist!');
+					}
+
+					trace(curCharacter);
+					var charJson:Dynamic = null;
+					var isError:Bool = false;
+					charJson = CoolUtil.parseJson(Assets.getText('assets/images/custom_chars/custom_chars.jsonc'));
+					//charScript.interp = Character.getAnimInterp(curCharacter);
+					charScript = new HscriptShit("assets/images/custom_chars/"+curCharacter+".hscript", curCharacter, true);
+					var charPath:String = 'assets/images/custom_chars/' + character + '/';
+					trace(this.hscriptPath);
+					call("init", [this]);
+				}
 
 				switch (isPsychFile)
 				{
@@ -631,6 +271,9 @@ class Character extends FlxSprite
 				if (!isError) {
 					// use assets, as it is less laggy
 					var animJson = File.getContent("assets/images/custom_chars/"+Reflect.field(charJson,curCharacter).like+".json");
+					if (!FileSystem.exists("assets/images/custom_chars/"+Reflect.field(charJson,curCharacter).like+".json"))
+						var animJson = File.getContent("assets/images/custom_chars/bf.json"); //default to bf to avoid crashing.
+					
 					var parsedAnimJson:Dynamic = CoolUtil.parseJson(animJson);
 
 
@@ -695,9 +338,10 @@ class Character extends FlxSprite
 					midpointY = if (parsedAnimJson.midpoint != null) parsedAnimJson.midpoint[1] else 0;
 					flipX = if (parsedAnimJson.flipx != null) parsedAnimJson.flipx else false;
 
-					healthColorArray[0] = if (parsedAnimJson.healthbar_color[0] != null) parsedAnimJson.healthbar_color[0] else 131;
+					/*healthColorArray[0] = if (parsedAnimJson.healthbar_color[0] != null) parsedAnimJson.healthbar_color[0] else 131;
 					healthColorArray[1] = if (parsedAnimJson.healthbar_color[1] != null) parsedAnimJson.healthbar_color[1] else 234;
-					healthColorArray[2] = if (parsedAnimJson.healthbar_color[2] != null) parsedAnimJson.healthbar_color[2] else 35;
+					healthColorArray[2] = if (parsedAnimJson.healthbar_color[2] != null) parsedAnimJson.healthbar_color[2] else 35;*/
+					//gonna make it get your color from the custom_chars json.
 
 					charHasNoteSkin = if (parsedAnimJson.hasNoteSkin != null) parsedAnimJson.hasNoteSkin else false;
 
@@ -1010,7 +654,10 @@ class Character extends FlxSprite
 	 */
 	public function dance()
 	{
-		if (!debugMode)
+		noDanceTwice++;
+		if (noDanceTwice == 2) {
+			noDanceTwice = 0;
+		if (!debugMode && !FileSystem.exists("assets/images/custom_chars/"+curCharacter+".hscript"))
 		{
 			switch (curCharacter)
 			{
@@ -1067,7 +714,21 @@ class Character extends FlxSprite
 				default:
 					playAnim('idle');
 			}
+		} else if (!debugMode) {
+			if (!debugMode && beNormal)
+			{
+				if (charScript.interp != null)
+					call("dance", [this])
+				else
+					playAnim('idle');
+
+				if (color != FlxColor.WHITE)
+				{
+					color = FlxColor.WHITE;
+				}
+			}
 		}
+	}
 	}
 
 	public function playAnim(AnimName:String, Force:Bool = false, Reversed:Bool = false, Frame:Int = 0):Void

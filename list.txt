@@ -1,0 +1,7 @@
+modcharts need to:
+change health - done
+swap chars - done
+swap stages - done
+change icons - done
+play animations - done
+switch between note uis

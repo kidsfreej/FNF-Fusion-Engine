@@ -823,6 +823,27 @@ class WatermarkOption extends Option
 	}
 }
 
+class ModdingPlus extends Option
+{
+	public function new(desc:String)
+	{
+		super();
+		description = desc;
+	}
+	
+	public override function press():Bool
+	{
+		FlxG.save.data.moddingPlus = !FlxG.save.data.moddingPlus;
+		trace('Modding Plus Features: ' + FlxG.save.data.moddingPlus);
+		display = updateDisplay();
+		return true;
+	}
+	
+	private override function updateDisplay():String {
+		return "M+ Features " + (FlxG.save.data.moddingPlus ? "on" : "off");
+	}
+}
+
 class OffsetMenu extends Option
 {
 	public function new(desc:String)

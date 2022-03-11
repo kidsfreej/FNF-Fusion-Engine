@@ -48,6 +48,8 @@ class Note extends FlxSprite
 	public var sustainLength:Float = 0;
 	public var isSustainNote:Bool = false;
 	public var noteColor:Int;
+	public static var noteTexture:String = 'noteassets/';
+	public static var pixelTexture:String = 'noteassets/pixel/';
 
 	public var burning:Bool = false; //fire
 	public var death:Bool = false;    //halo/death
@@ -268,9 +270,9 @@ class Note extends FlxSprite
 		switch (noteTypeCheck)
 		{
 			case 'pixel':
-				loadGraphic(Paths.image('noteassets/pixel/arrows-pixels'), true, 17, 17);
+				loadGraphic(Paths.image(pixelTexture + 'arrows-pixels'), true, 17, 17);
 				if (isSustainNote && noteType == 0)
-					loadGraphic(Paths.image('noteassets/pixel/arrowEnds'), true, 7, 6);
+					loadGraphic(Paths.image(pixelTexture + 'arrowEnds'), true, 7, 6);
 
 				for (i in 0...9)
 				{
@@ -358,9 +360,9 @@ class Note extends FlxSprite
 			case 'normal':
 				//frames = Paths.getSparrowAtlas('noteassets/NOTE_assets');
 				if (!FlxG.save.data.circleShit)
-					frames = Paths.getSparrowAtlas('noteassets/NOTE_assets');
+					frames = Paths.getSparrowAtlas(noteTexture + 'NOTE_assets');
 				else 
-					frames = FlxAtlasFrames.fromSparrow('assets/images/noteassets/circle/NOTE_assets.png', 'assets/images/noteassets/circle/NOTE_assets.xml');
+					frames = FlxAtlasFrames.fromSparrow('assets/images/' + noteTexture + 'circle/NOTE_assets.png', 'assets/images' + noteTexture + 'circle/NOTE_assets.xml');
 				
 				for (i in 0...9)
 					{

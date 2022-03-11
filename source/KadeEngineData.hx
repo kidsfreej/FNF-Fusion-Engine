@@ -169,6 +169,9 @@ class KadeEngineData
 
 		if (FlxG.save.data.input == null)
 			FlxG.save.data.input = "kade";
+
+		if (FlxG.save.data.moddingPlus == null)
+			FlxG.save.data.moddingPlus = true;
 		
 		var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
 		

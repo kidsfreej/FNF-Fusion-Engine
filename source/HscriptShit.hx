@@ -36,6 +36,8 @@ import Shaders.HSVEffect;
 import Shaders.HSVShader;
 import Shaders.RayMarchEffect;
 import Shaders.RayMarchShader;
+import flixel.util.FlxColor;
+import flixel.FlxSprite;
 
 class HscriptShit //funni modcharts
 {
@@ -43,7 +45,7 @@ class HscriptShit //funni modcharts
     public var enabled:Bool = false;
     var script:Expr;
 
-    public function new (freeplayPath:String, path:String = '')
+    public function new (freeplayPath:String, path:String = '', inCharacterState:Bool = false)
     {
         #if sys
 		if (FileSystem.exists(path))
@@ -67,7 +69,10 @@ class HscriptShit //funni modcharts
             {
                 loadScript(freeplayPath);
                 enabled = true;
-                setScriptVars();
+                if (!inCharacterState)
+                    setScriptVars();
+                else 
+                    setCharVars(path);
                 interp.execute(script);
                 trace('HScript loaded Sucessfully. | ' + freeplayPath);
             } catch(e) { trace(e.message); }
@@ -89,14 +94,10 @@ class HscriptShit //funni modcharts
     {
 		if (interp.variables.exists(tfisthis)) //make sure it exists
         {
-            //interp.variables.get(tfisthis)(); //uhh i think this work idk
-            //trace(interp.variables.get(tfisthis));
             if (shitToGoIn.length > 0)
                 interp.variables.get(tfisthis)(shitToGoIn[0]);
             else
                 interp.variables.get(tfisthis)(); //if function doesnt need an arg
-
-            //trace(shitToGoIn);
 
         }
             
@@ -121,6 +122,34 @@ class HscriptShit //funni modcharts
         script = parser.parseString(rawCode); //load da shit
         interp = new Interp();       
         //trace(script);
+    }
+
+    function setCharVars(char:String)
+    {
+        var Level_NotAHoe = 0;
+	    var Level_Boogie = 1;
+	    var Level_Sadness = 2;
+	    var Level_Sing = 3;
+		interp.variables.set("hscriptPath", 'assets/images/custom_chars/' + char + '/');
+		interp.variables.set("charName", char);
+		interp.variables.set("Level_NotAHoe", Level_NotAHoe);
+		interp.variables.set("Level_Boogie", Level_Boogie);
+		interp.variables.set("Level_Sadness", Level_Sadness);
+		interp.variables.set("Level_Sing", Level_Sing);
+		interp.variables.set("portraitOffset", [0, 0]);
+		interp.variables.set("dadVar", 4.0);
+		interp.variables.set("isPixel", false);
+		interp.variables.set("colors", [FlxColor.CYAN]);
+        interp.variables.set("scriptableCamera", 'false');
+        interp.variables.set("dance", function (char:Character) {});
+
+        interp.variables.set("init", function (char:Character) {}); //this one function is causing so many problems.
+        interp.variables.set("loadColor", function (character:Character) {});
+
+        interp.variables.set("onCharChange", function (char:Character) {}); 
+		//interp.execute(program);
+		//trace(interp);
+		//return interp;
     }
 
     function setScriptVars()
@@ -158,6 +187,16 @@ class HscriptShit //funni modcharts
         interp.variables.set("exitPauseMenu", function () {}); 
         interp.variables.set("onGitarooPause", function () {}); 
         interp.variables.set("onPauseMenu", function () {}); 
+        
+        //modding+ things
+
+        interp.variables.set("scriptableCamera", 'false');
+        interp.variables.set("dance", function (char:String) {});
+
+        interp.variables.set("init", function (char:Character) {}); //this one function is causing so many problems.
+        interp.variables.set("loadColor", function (character:Character) {});
+
+        interp.variables.set("onCharChange", function (char:Character) {}); 
       //  interp.variables.set("onStrumsGenerated", function (strums:StrumLineGroup) {});
         //interp.variables.set("StrumOffsets", function (strum:BabyArrow) {});
        // interp.variables.set("NoteOffsets", function (note:Note) {});
