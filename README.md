@@ -1,9 +1,9 @@
-# **Better Fusion Engine** is a modding engine that **makes Fusion Engine even better!**
+ # **Fusion Engine** is a modding engine that **combines the ease of modding with Modding Plus and the luxuries of Kade Engine. No need for compiling!**.
 
 ![OG Fusion Engine logo](https://raw.githubusercontent.com/kidsfreej/FNF-Fusion-Engine/master/art/fusion_engine.png)
 
 
-https://discord.gg/qPfxxd4XWA
+
 # If you make a mod, please credit me on the gamebanana or github page!! Also credit kidsfreej!
 # Friday Night Funkin': Better Fusion Engine Beta
 
