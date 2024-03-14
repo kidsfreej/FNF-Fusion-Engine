@@ -2,7 +2,9 @@
 
 ![OG Fusion Engine logo](https://raw.githubusercontent.com/kidsfreej/FNF-Fusion-Engine/master/art/fusion_engine.png)
 
-
+# Disclaimer
+This mod is no longer being actively maintained unfortunately.
+We recommend you use Psych Engine as it is still being updated.
 
 # If you make a mod, please credit me on the gamebanana or github page!! Also credit kidsfreej!
 # Friday Night Funkin': Better Fusion Engine Beta
